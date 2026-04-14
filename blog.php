@@ -2,34 +2,25 @@
 session_start();
 require 'koneksi.php';
 
-$stmt = $pdo->query("SELECT * FROM products ORDER BY id DESC LIMIT 8");
-$sepatu = $stmt->fetchAll(PDO::FETCH_ASSOC);
-// Hitung jumlah barang di keranjang
-$keranjang_cookie = isset($_COOKIE['keranjang']) ? json_decode($_COOKIE['keranjang'], true) : [];
-$jumlah_keranjang = array_sum($keranjang_cookie); // Menjumlahkan semua qty barang
+// Hanya ambil yang statusnya PUBLISHED
+$stmt = $pdo->query("SELECT posts.*, users.name AS author_name FROM posts JOIN users ON posts.user_id = users.id WHERE posts.status = 'PUBLISHED' ORDER BY posts.published_at DESC");
+$posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// TAMBAHAN: Hitung jumlah pesanan yang belum COMPLETED
-$jumlah_pesanan_aktif = 0;
-if (isset($_SESSION['customer_id'])) {
-    $stmt_pesanan = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE user_id = ? AND status != 'COMPLETED'");
-    $stmt_pesanan->execute([$_SESSION['customer_id']]);
-    $jumlah_pesanan_aktif = $stmt_pesanan->fetchColumn();
-}
+// Penghitung keranjang untuk navbar
+$keranjang_cookie = isset($_COOKIE['keranjang']) ? json_decode($_COOKIE['keranjang'], true) : [];
+$jumlah_keranjang = array_sum($keranjang_cookie);
 ?>
 
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="utf-8">
-    <title>Shoeshops</title>
+    <title>Our Blog | SNEAKERS</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 text-slate-800">
-
-    <nav class="bg-white p-4 shadow">
+    <nav class="bg-white p-4 shadow mb-8">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <a href="index.php" class="text-2xl font-extrabold text-indigo-600">SNEAKERS.</a>
-            
             <div class="flex items-center space-x-6">
 
                 <a href="blog.php" class="relative text-slate-600 hover:text-indigo-600 font-bold text-sm flex items-center transition pr-2">
@@ -78,26 +69,34 @@ if (isset($_SESSION['customer_id'])) {
         </div>
     </nav>
 
-    <div class="max-w-7xl mx-auto px-4 py-12">
-        <h2 class="text-3xl font-extrabold mb-8">Koleksi Terpopuler</h2>
-        
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            
-            <?php if(count($sepatu) > 0): ?>
-                <?php foreach($sepatu as $item): ?>
-                    <div class="bg-white rounded-xl shadow p-4">
-                        <img src="uploads/<?= $item['image'] ?? 'sepatu_default.jpg' ?>" alt="Sepatu" class="w-full h-48 object-cover rounded-lg mb-4">
-                        <h3 class="text-lg font-bold"><?= htmlspecialchars($item['name']) ?></h3>
-                        <p class="text-indigo-600 font-extrabold mt-2">Rp <?= number_format($item['price'], 0, ',', '.') ?></p>
-                        <a href="detail.php?produk=<?= $item['slug'] ?>" class="block w-full text-center bg-slate-900 text-white mt-4 py-2 rounded">Detail</a>
-                    </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <p class="text-slate-500">Belum ada produk di database.</p>
-            <?php endif; ?>
+    <div class="max-w-7xl mx-auto px-4 mb-12">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-extrabold text-slate-900 mb-4">SNEAKERS Journal.</h1>
+            <p class="text-slate-500 text-lg">Berita terbaru, tips gaya, dan kultur sneakers.</p>
+        </div>
 
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <?php foreach ($posts as $b): ?>
+                <a href="detail_blog.php?slug=<?= $b['slug'] ?>" class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl transition group">
+                    <div class="h-56 overflow-hidden">
+                        <img src="uploads/<?= htmlspecialchars($b['thumbnail']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                    </div>
+                    <div class="p-6">
+                        <p class="text-xs font-bold text-indigo-600 mb-2 uppercase tracking-wider"><?= date('d M Y', strtotime($b['published_at'])) ?></p>
+                        <h2 class="text-xl font-bold text-slate-900 mb-3 group-hover:text-indigo-600 transition"><?= htmlspecialchars($b['title']) ?></h2>
+                        <p class="text-slate-500 text-sm line-clamp-3">
+                            <?= htmlspecialchars(substr($b['content'], 0, 150)) ?>...
+                        </p>
+                        <div class="mt-4 pt-4 border-t border-slate-100 flex items-center gap-2">
+                            <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold">
+                                <?= substr($b['author_name'], 0, 1) ?>
+                            </div>
+                            <span class="text-sm font-medium text-slate-600"><?= htmlspecialchars($b['author_name']) ?></span>
+                        </div>
+                    </div>
+                </a>
+            <?php endforeach; ?>
         </div>
     </div>
-
 </body>
 </html>

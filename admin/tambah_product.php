@@ -19,6 +19,7 @@ if (isset($_POST['submit'])) {
     $category_id = $_POST['category_id'];
     $description = $_POST['description']; // <-- Tangkap deskripsi
     $price = $_POST['price'];
+    $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name)));
     
     $waktu_sekarang = date('Y-m-d H:i:s');
     $imageName = '';
@@ -33,10 +34,10 @@ if (isset($_POST['submit'])) {
 
     try {
         // 2. Query INSERT diperbarui (tambah kolom description dan 7 tanda tanya)
-        $stmt = $pdo->prepare("INSERT INTO products (name, category_id, description, price, image, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO products (name, slug, category_id, description, price, image, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         
         // 3. Eksekusi query dengan memasukkan variabel $description
-        $stmt->execute([$name, $category_id, $description, $price, $imageName, $waktu_sekarang, $waktu_sekarang]);
+        $stmt->execute([$name, $slug, $category_id, $description, $price, $imageName, $waktu_sekarang, $waktu_sekarang]);
         
         $pesan = 'Sepatu berhasil ditambahkan!';
     } catch (PDOException $e) {
