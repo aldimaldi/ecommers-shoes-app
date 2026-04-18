@@ -9,6 +9,14 @@ $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // Penghitung keranjang untuk navbar
 $keranjang_cookie = isset($_COOKIE['keranjang']) ? json_decode($_COOKIE['keranjang'], true) : [];
 $jumlah_keranjang = array_sum($keranjang_cookie);
+
+// TAMBAHAN: Hitung jumlah pesanan yang belum COMPLETED
+$jumlah_pesanan_aktif = 0;
+if (isset($_SESSION['customer_id'])) {
+    $stmt_pesanan = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE user_id = ? AND status != 'COMPLETED'");
+    $stmt_pesanan->execute([$_SESSION['customer_id']]);
+    $jumlah_pesanan_aktif = $stmt_pesanan->fetchColumn();
+}
 ?>
 
 <!DOCTYPE html>

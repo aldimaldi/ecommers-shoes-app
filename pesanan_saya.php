@@ -91,6 +91,11 @@ function getStatusText($status) {
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <a href="index.php" class="text-2xl font-extrabold text-indigo-600">SNEAKERS.</a>
             <div class="flex items-center space-x-6">
+
+                <a href="blog.php" class="relative text-slate-600 hover:text-indigo-600 font-bold text-sm flex items-center transition pr-2">
+                    Our Blog
+                </a>
+                
                 <a href="pesanan_saya.php" class="relative text-indigo-600 font-bold text-sm flex items-center transition pr-2">
                     📦 Pesanan Saya
                     <?php if($jumlah_pesanan_aktif > 0): ?>

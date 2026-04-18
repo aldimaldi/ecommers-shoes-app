@@ -57,6 +57,10 @@ if (isset($_SESSION['customer_id'])) {
             <a href="index.php" class="text-2xl font-extrabold text-indigo-600">SNEAKERS.</a>
             
             <div class="flex items-center space-x-6">
+
+                <a href="blog.php" class="relative text-slate-600 hover:text-indigo-600 font-bold text-sm flex items-center transition pr-2">
+                    Our Blog
+                </a>
                 
                 <?php if (isset($_SESSION['customer_id'])): ?>
                     
