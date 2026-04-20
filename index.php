@@ -86,7 +86,7 @@ if (isset($_SESSION['customer_id'])) {
     <div class="relative z-10 flex-1 flex items-center max-w-7xl mx-auto px-6 w-full">
         <div class="text-white max-w-xl">
             <span class="inline-block border border-white/30 rounded-full px-4 py-1 text-[11px] font-bold tracking-widest uppercase mb-6 text-gray-300">
-                PUMA • ADIDAS • PRODUK LOKAL
+                PUMA • ADIDAS • NIKE 
             </span>
             
             <h1 class="text-6xl md:text-[5.5rem] font-extrabold leading-[1.1] tracking-tight mb-4">
