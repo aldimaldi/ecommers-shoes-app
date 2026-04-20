@@ -2,113 +2,166 @@
 session_start();
 require '../koneksi.php';
 
-// Pengecekan krusial: Wajib admin
+// Pengecekan admin
 if (!isset($_SESSION['admin_id'])) {
     header("Location: ../login.php");
     exit;
 }
 
-// Ambil semua data sepatu beserta nama kategorinya dari database
-$stmt = $pdo->query("
-    SELECT products.*, categories.name AS category_name 
-    FROM products 
-    LEFT JOIN categories ON products.category_id = categories.id 
-    ORDER BY products.id DESC
+// ==========================================
+// 1. DATA UNTUK KARTU "SALES OVERVIEW" (Statistik Global)
+// ==========================================
+// Total Penjualan (Hanya yang berstatus PAID, SHIPPED, atau COMPLETED)
+$stmt_sales = $pdo->query("SELECT SUM(final_price) FROM orders WHERE status != 'PENDING' AND status != 'CANCELLED'");
+$total_sales = $stmt_sales->fetchColumn() ?: 0;
+
+// Total Pesanan
+$stmt_orders = $pdo->query("SELECT COUNT(id) FROM orders WHERE status != 'CANCELLED'");
+$total_orders = $stmt_orders->fetchColumn() ?: 0;
+
+// Total Pelanggan Terdaftar
+$stmt_users = $pdo->query("SELECT COUNT(id) FROM users WHERE role = 'customer'");
+$total_users = $stmt_users->fetchColumn() ?: 0;
+
+// ==========================================
+// 2. DATA UNTUK KARTU "WEEKLY STATS" (5 Pesanan Terbaru)
+// ==========================================
+$stmt_recent = $pdo->query("
+    SELECT orders.invoice_number, orders.final_price, orders.status, users.name AS customer_name 
+    FROM orders 
+    JOIN users ON orders.user_id = users.id 
+    ORDER BY orders.created_at DESC 
+    LIMIT 4
 ");
-$produk_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$recent_orders = $stmt_recent->fetchAll(PDO::FETCH_ASSOC);
+
+// Helper function
+function getStatusIconColor($status) {
+    switch ($status) {
+        case 'PENDING': return 'btn-warning';
+        case 'PAID': return 'btn-primary';
+        case 'SHIPPED': return 'btn-info';
+        case 'COMPLETED': return 'btn-success';
+        default: return 'btn-secondary';
+    }
+}
+function getStatusIcon($status) {
+    switch ($status) {
+        case 'PENDING': return 'ti-clock';
+        case 'PAID': return 'ti-box';
+        case 'SHIPPED': return 'ti-truck';
+        case 'COMPLETED': return 'ti-check';
+        default: return 'ti-help';
+    }
+}
 ?>
 
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <title>Dashboard Admin | SNEAKERS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 p-8">
+<?php 
+include 'layouts/header.php'; 
+include 'layouts/sidebar.php'; 
+include 'layouts/navbar.php'; 
+?>
 
-    <div class="max-w-7xl mx-auto">
-        
-        <div class="bg-white p-6 rounded-xl shadow mb-8 flex justify-between items-center">
-            <div>
-                <h1 class="text-2xl font-bold text-indigo-600">Dashboard Panel</h1>
-                <p class="text-slate-500 text-sm mt-1">Pusat kendali e-commerce Anda.</p>
-            </div>
-            <div class="flex items-center gap-6">
-                <p class="font-medium text-slate-700">Halo, <b><?= htmlspecialchars($_SESSION['admin_name']) ?></b></p>
-
-                <a href="kelola_blog.php" class="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-100 transition border border-indigo-200 shadow-sm">
-                    ✍️ Kelola Blog
-                </a>
-                
-                <a href="kelola_kategori.php" class="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-100 transition border border-indigo-200 shadow-sm">
-                    📁 Kategori
-                </a>
-                
-                <a href="kelola_voucher.php" class="bg-indigo-100 text-indigo-700 px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-indigo-200 transition border border-indigo-200">
-                    🎟️ Kelola Voucher
-                </a>
-
-                <a href="kelola_pesanan.php" class="bg-indigo-600 text-white px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-indigo-700 transition shadow-sm">
-                    📦 Kelola Pesanan
-                </a>
-
-                <a href="logout.php" class="bg-red-500 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-red-600 transition shadow-sm">Logout</a>
+<div class="row">
+    
+    <div class="col-12 mb-4">
+        <div class="card bg-primary-subtle border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h3 class="fw-bolder mb-1 text-primary">Selamat datang kembali, <?= htmlspecialchars($_SESSION['admin_name'] ?? 'Admin') ?>!</h3>
+                <p class="mb-0 text-muted fs-4">Berikut adalah ringkasan performa toko sepatumu hari ini.</p>
             </div>
         </div>
-
-        <div class="bg-white rounded-xl shadow overflow-hidden">
-            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                <h2 class="text-lg font-bold text-slate-800">Daftar Sepatu</h2>
-                <a href="tambah_product.php" class="bg-slate-900 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-slate-800 transition shadow-sm">
-                    + Tambah Sepatu Baru
-                </a>
-            </div>
-
-            <div class="p-8">
-                <?php if (count($produk_list) > 0): ?>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        <?php foreach ($produk_list as $p): ?>
-                            <div class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl border border-slate-100 transition-all duration-300 group">
-                                <div class="relative mb-4">
-                                    <img src="../uploads/<?= htmlspecialchars($p['image']) ?>" alt="Foto" class="w-full aspect-square object-cover rounded-xl border-2 border-slate-200 group-hover:border-indigo-300 transition">
-                                    <span class="absolute top-3 left-3 bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs font-bold">
-                                        <?= htmlspecialchars($p['category_name'] ?? 'No Cat') ?>
-                                    </span>
-                                </div>
-                                
-                                <h3 class="font-bold text-lg text-slate-900 mb-2 truncate leading-tight"><?= htmlspecialchars($p['name']) ?></h3>
-                                
-                                <p class="text-2xl font-black text-indigo-600 mb-4">Rp <?= number_format($p['price'], 0, ',', '.') ?></p>
-                                
-                                <div class="flex gap-2">
-                                    <a href="tambah_varian.php?product_id=<?= $p['id'] ?>" class="flex-1 bg-indigo-600 text-white text-sm font-bold py-2 px-4 rounded-xl text-center hover:bg-indigo-700 transition shadow-sm">
-                                        Kelola Varian
-                                    </a>
-                                    <a href="edit_product.php?id=<?= $p['id'] ?>" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold p-2 rounded-xl transition flex items-center justify-center shadow-sm w-12 h-12" title="Edit">
-                                        ✏️
-                                    </a>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php else: ?>
-                    <div class="p-16 text-center border-2 border-dashed border-slate-200 rounded-2xl">
-                        <div class="w-20 h-20 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4l-8-4m0 0v10l-8 4m0-4V7m16 0h-4m-4 0H4" />
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-bold text-slate-600 mb-2">Belum ada produk</h3>
-                        <p class="text-slate-500 mb-6">Silakan tambah sepatu baru terlebih dahulu.</p>
-                        <a href="tambah_product.php" class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-indigo-700 transition shadow-lg">
-                            + Tambah Produk Pertama
-                        </a>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-
     </div>
 
-</body>
-</html>
+    <div class="col-lg-8">
+      <div class="card w-100 shadow-sm border-0 h-100">
+        <div class="card-body d-flex flex-column">
+          <div class="d-md-flex align-items-center mb-4">
+            <div>
+              <h4 class="card-title fw-bold">Ringkasan Penjualan</h4>
+              <p class="card-subtitle text-muted">Total akumulasi sepanjang waktu</p>
+            </div>
+          </div>
+          
+          <div class="row text-center flex-grow-1 align-items-stretch">
+              <div class="col-md-4 mb-3 mb-md-0">
+                  <div class="p-3 bg-light rounded-4 border h-100 d-flex flex-column justify-content-center">
+                      <i class="ti ti-cash text-success mb-2" style="font-size: 2.5rem;"></i>
+                      <h3 class="fw-bolder text-dark mb-1">Rp <?= number_format($total_sales, 0, ',', '.') ?></h3>
+                      <p class="text-muted mb-0 fw-semibold fs-3">Total Pendapatan</p>
+                  </div>
+              </div>
+              <div class="col-md-4 mb-3 mb-md-0">
+                  <div class="p-3 bg-light rounded-4 border h-100 d-flex flex-column justify-content-center">
+                      <i class="ti ti-shopping-cart text-primary mb-2" style="font-size: 2.5rem;"></i>
+                      <h3 class="fw-bolder text-dark mb-1"><?= number_format($total_orders) ?></h3>
+                      <p class="text-muted mb-0 fw-semibold fs-3">Total Transaksi</p>
+                  </div>
+              </div>
+              <div class="col-md-4">
+                  <div class="p-3 bg-light rounded-4 border h-100 d-flex flex-column justify-content-center">
+                      <i class="ti ti-users text-info mb-2" style="font-size: 2.5rem;"></i>
+                      <h3 class="fw-bolder text-dark mb-1"><?= number_format($total_users) ?></h3>
+                      <p class="text-muted mb-0 fw-semibold fs-3">Pelanggan Aktif</p>
+                  </div>
+              </div>
+          </div>
+          
+          <div class="text-center mt-4 border-top pt-3">
+              <a href="kelola_pesanan.php" class="btn btn-outline-primary fw-bold px-4 rounded-pill">Lihat Laporan Lengkap <i class="ti ti-arrow-right"></i></a>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4 mt-4 mt-lg-0">
+      <div class="card overflow-hidden shadow-sm border-0 h-100">
+        <div class="card-body pb-4">
+          
+          <div class="d-flex align-items-start mb-4">
+            <div>
+              <h4 class="card-title fw-bold">Pesanan Terbaru</h4>
+              <p class="card-subtitle text-muted">Transaksi yang baru masuk</p>
+            </div>
+            <div class="ms-auto">
+              <a href="kelola_pesanan.php" class="text-primary fw-bold text-decoration-none" title="Lihat Semua">
+                  <i class="ti ti-external-link fs-6"></i>
+              </a>
+            </div>
+          </div>
+
+          <?php if (count($recent_orders) > 0): ?>
+              <?php foreach ($recent_orders as $ro): ?>
+                  <div class="py-3 d-flex align-items-center border-bottom border-light">
+                    <span class="btn <?= getStatusIconColor($ro['status']) ?> rounded-circle round-48 hstack justify-content-center shadow-sm">
+                      <i class="ti <?= getStatusIcon($ro['status']) ?> fs-6"></i>
+                    </span>
+                    
+                    <div class="ms-3 flex-grow-1">
+                      <h6 class="mb-0 fw-bolder text-dark text-truncate" style="max-width: 130px;"><?= htmlspecialchars($ro['customer_name']) ?></h6>
+                      <span class="text-muted fs-3"><?= htmlspecialchars($ro['invoice_number']) ?></span>
+                    </div>
+                    
+                    <div class="ms-auto text-end">
+                      <span class="d-block fw-bold text-dark fs-3">Rp <?= number_format($ro['final_price'], 0, ',', '.') ?></span>
+                      <small class="badge bg-light text-muted border border-light-subtle rounded-pill fw-medium"><?= $ro['status'] ?></small>
+                    </div>
+                  </div>
+              <?php endforeach; ?>
+          <?php else: ?>
+              <div class="text-center py-5">
+                  <i class="ti ti-receipt text-muted mb-2" style="font-size: 2.5rem;"></i>
+                  <p class="text-muted fw-semibold">Belum ada transaksi.</p>
+              </div>
+          <?php endif; ?>
+
+        </div>
+      </div>
+    </div>
+
+</div>
+
+<?php 
+include 'layouts/footer.php'; 
+?>

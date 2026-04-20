@@ -2,138 +2,185 @@
 session_start();
 require '../koneksi.php';
 
-// Wajib admin
+// Pengecekan krusial: Wajib admin
 if (!isset($_SESSION['admin_id'])) {
     header("Location: ../login.php");
     exit;
 }
 
-$pesan = '';
-$pesan_error = '';
+// --- FITUR ANTI-REFRESH BUG (FLASH MESSAGES) ---
+$pesan = $_SESSION['pesan'] ?? '';
+$pesan_error = $_SESSION['pesan_error'] ?? '';
+unset($_SESSION['pesan']);
+unset($_SESSION['pesan_error']);
 
+// ==========================================
 // 1. PROSES HAPUS KATEGORI
-if (isset($_GET['hapus'])) {
+// ==========================================
+if (isset($_POST['delete_category'])) {
+    $id_hapus = $_POST['category_id'];
     try {
         $stmt = $pdo->prepare("DELETE FROM categories WHERE id = ?");
-        $stmt->execute([$_GET['hapus']]);
-        $pesan = "Kategori berhasil dihapus!";
+        $stmt->execute([$id_hapus]);
+        $_SESSION['pesan'] = "Kategori berhasil dihapus permanen!";
     } catch (PDOException $e) {
-        // Error biasanya muncul jika kategori sedang dipakai oleh sepatu di tabel products (Foreign Key Restrict)
-        $pesan_error = "Gagal menghapus! Pastikan kategori ini tidak sedang dipakai oleh produk sepatu manapun.";
+        // Error muncul jika kategori sedang dipakai oleh produk sepatu
+        $_SESSION['pesan_error'] = "Gagal menghapus! Pastikan kategori ini tidak sedang dipakai oleh produk sepatu manapun.";
     }
+    header("Location: kelola_kategori.php");
+    exit;
 }
 
+// ==========================================
 // 2. PROSES TAMBAH KATEGORI BARU
-if (isset($_POST['submit'])) {
+// ==========================================
+if (isset($_POST['add_category'])) {
     $name = trim($_POST['name']);
     
-    // Validasi agar tidak kosong
     if (!empty($name)) {
-        // Membuat slug otomatis (mengubah spasi jadi strip, huruf kecil semua)
-        $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name)));
+        // Membuat slug otomatis dengan tambahan 5 karakter random agar unik
+        $base_slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name)));
+        $slug = $base_slug . '-' . substr(uniqid(), -5);
         
         try {
-            // Tambahkan kolom slug ke dalam query INSERT
             $stmt = $pdo->prepare("INSERT INTO categories (name, slug) VALUES (?, ?)");
             $stmt->execute([$name, $slug]);
-            $pesan = "Kategori '$name' berhasil ditambahkan!";
+            $_SESSION['pesan'] = "Kategori '$name' berhasil ditambahkan!";
         } catch (PDOException $e) {
-            // Jika nama kategori kembar, slug juga akan kembar dan memicu error ini
-            if ($e->getCode() == 23000) {
-                $pesan_error = "Kategori '$name' sudah ada di database!";
-            } else {
-                $pesan_error = "Gagal menyimpan: " . $e->getMessage();
-            }
+            $_SESSION['pesan_error'] = "Gagal menyimpan: " . $e->getMessage();
         }
     } else {
-        $pesan_error = "Nama kategori tidak boleh kosong!";
+        $_SESSION['pesan_error'] = "Nama kategori tidak boleh kosong!";
     }
+    header("Location: kelola_kategori.php");
+    exit;
 }
 
+// ==========================================
 // 3. AMBIL DATA SEMUA KATEGORI
+// ==========================================
 $stmt_list = $pdo->query("SELECT * FROM categories ORDER BY id DESC");
 $categories = $stmt_list->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <title>Kelola Kategori | Admin SNEAKERS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 p-8">
+<?php 
+include 'layouts/header.php'; 
+include 'layouts/sidebar.php'; 
+include 'layouts/navbar.php'; 
+?>
 
-    <div class="max-w-6xl mx-auto">
-        <div class="flex justify-between items-center mb-8 border-b border-slate-200 pb-4">
-            <h1 class="text-3xl font-extrabold text-indigo-600">Manajemen Kategori Produk</h1>
-            <a href="index.php" class="text-slate-500 font-bold hover:text-indigo-600">&larr; Kembali ke Dashboard</a>
-        </div>
+<div class="row">
 
+    <div class="col-12 mb-4">
         <?php if ($pesan): ?>
-            <div class="bg-green-100 text-green-700 px-4 py-3 rounded-lg mb-6 font-bold shadow-sm"><?= $pesan ?></div>
+            <div class="alert alert-success border-0 bg-success-subtle text-success alert-dismissible fade show" role="alert">
+                <?= $pesan ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
         <?php endif; ?>
         <?php if ($pesan_error): ?>
-            <div class="bg-red-100 text-red-700 px-4 py-3 rounded-lg mb-6 font-bold shadow-sm"><?= $pesan_error ?></div>
+            <div class="alert alert-danger border-0 bg-danger-subtle text-danger alert-dismissible fade show" role="alert">
+                <?= $pesan_error ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
         <?php endif; ?>
+    </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            <div class="lg:col-span-1">
-                <div class="bg-white p-6 rounded-xl shadow border border-slate-100">
-                    <h2 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Tambah Kategori Baru</h2>
-                    <form method="POST" action="">
-                        <div class="mb-6">
-                            <label class="block text-sm font-bold text-slate-700 mb-2">Nama Kategori</label>
-                            <input type="text" name="name" required placeholder="Contoh: Sneakers Pria" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-                        </div>
-                        <button type="submit" name="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition shadow-md">
-                            Simpan Kategori
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <div class="lg:col-span-2">
-                <div class="bg-white rounded-xl shadow border border-slate-100 overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-slate-100 text-slate-600 text-sm uppercase tracking-wider">
-                                    <th class="p-4 font-bold w-16 text-center">ID</th>
-                                    <th class="p-4 font-bold">Nama Kategori</th>
-                                    <th class="p-4 font-bold w-32 text-center">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 text-sm">
-                                <?php if (count($categories) > 0): ?>
-                                    <?php foreach ($categories as $c): ?>
-                                        <tr class="hover:bg-slate-50 transition">
-                                            <td class="p-4 text-center text-slate-500 font-medium">
-                                                #<?= $c['id'] ?>
-                                            </td>
-                                            <td class="p-4 font-bold text-slate-800 text-lg">
-                                                <?= htmlspecialchars($c['name']) ?>
-                                            </td>
-                                            <td class="p-4 text-center">
-                                                <a href="?hapus=<?= $c['id'] ?>" onclick="return confirm('Yakin ingin menghapus kategori <?= htmlspecialchars($c['name']) ?>?');" class="text-red-500 font-bold hover:text-red-700 bg-red-50 px-4 py-1.5 rounded-lg border border-red-100 transition">
-                                                    Hapus
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                <?php else: ?>
-                                    <tr>
-                                        <td colspan="3" class="p-8 text-center text-slate-500">Belum ada data kategori.</td>
-                                    </tr>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
+    <div class="col-lg-4">
+        <div class="card w-100 shadow-sm border-0">
+            <div class="card-body">
+                <h4 class="card-title fw-bold mb-4">Tambah Kategori</h4>
+                
+                <form method="POST" action="">
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Nama Kategori</label>
+                        <input type="text" name="name" required placeholder="Contoh: Sneakers Pria" class="form-control">
                     </div>
-                </div>
+                    <button type="submit" name="add_category" class="btn btn-primary w-100 fw-bold d-flex align-items-center justify-content-center gap-2">
+                        <i class="ti ti-plus fs-5"></i> Simpan Kategori
+                    </button>
+                </form>
+                
             </div>
-
         </div>
     </div>
 
-</body>
-</html>
+    <div class="col-lg-8">
+        <div class="card w-100 shadow-sm border-0">
+            <div class="card-body">
+                <h4 class="card-title fw-bold mb-4">Daftar Kategori</h4>
+                
+                <div class="table-responsive">
+                    <table class="table mb-0 text-nowrap varient-table align-middle table-hover">
+                        <thead class="text-dark fs-4 bg-light">
+                            <tr>
+                                <th scope="col" class="px-3 border-bottom-0"><h6 class="fw-semibold mb-0">ID</h6></th>
+                                <th scope="col" class="px-0 border-bottom-0"><h6 class="fw-semibold mb-0">Nama Kategori</h6></th>
+                                <th scope="col" class="px-3 border-bottom-0 text-end"><h6 class="fw-semibold mb-0">Aksi</h6></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (count($categories) > 0): ?>
+                                <?php foreach ($categories as $c): ?>
+                                    <tr>
+                                        <td class="px-3 border-bottom-0">
+                                            <h6 class="fw-semibold mb-0 text-muted">#<?= $c['id'] ?></h6>
+                                        </td>
+                                        <td class="px-0 border-bottom-0">
+                                            <p class="mb-0 fw-bold text-dark fs-4"><?= htmlspecialchars($c['name']) ?></p>
+                                        </td>
+                                        <td class="px-3 border-bottom-0 text-end">
+                                            <button type="button" class="btn btn-sm btn-danger shadow-sm" data-bs-toggle="modal" data-bs-target="#hapusKategoriModal<?= $c['id'] ?>" title="Hapus Kategori">
+                                                <i class="ti ti-trash fs-5"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="3" class="px-0 text-center py-5">
+                                        <div class="text-muted mb-2"><i class="ti ti-folder fs-8"></i></div>
+                                        <h6 class="fw-bolder">Belum ada kategori</h6>
+                                        <p class="text-muted mb-0">Silakan buat kategori baru di form sebelah kiri.</p>
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<?php foreach ($categories as $c): ?>
+<div class="modal fade" id="hapusKategoriModal<?= $c['id'] ?>" tabindex="-1" aria-labelledby="hapusLabel<?= $c['id'] ?>" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-danger">
+      <div class="modal-header bg-danger text-white border-0">
+        <h5 class="modal-title fw-bold text-white" id="hapusLabel<?= $c['id'] ?>">Konfirmasi Hapus</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="" class="modal-content border-0">
+          <div class="modal-body text-center py-4">
+              <i class="ti ti-alert-triangle text-danger mb-3" style="font-size: 4rem;"></i>
+              <h5 class="fw-bold mb-2">Hapus Kategori "<?= htmlspecialchars($c['name']) ?>"?</h5>
+              <p class="text-muted mb-0">Tindakan ini tidak dapat dibatalkan. Pastikan tidak ada produk sepatu yang menggunakan kategori ini.</p>
+              
+              <input type="hidden" name="category_id" value="<?= $c['id'] ?>">
+          </div>
+          <div class="modal-footer justify-content-center bg-light border-top-0">
+              <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Batal</button>
+              <button type="submit" name="delete_category" class="btn btn-danger px-4 fw-bold">Ya, Hapus!</button>
+          </div>
+      </form>
+    </div>
+  </div>
+</div>
+<?php endforeach; ?>
+
+<?php 
+include 'layouts/footer.php'; 
+?>

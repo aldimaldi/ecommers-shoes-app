@@ -8,22 +8,37 @@ if (!isset($_SESSION['admin_id'])) {
     exit;
 }
 
-$pesan = '';
-$pesan_error = '';
+// --- FITUR ANTI-REFRESH BUG (FLASH MESSAGES) ---
+$pesan = $_SESSION['pesan'] ?? '';
+$pesan_error = $_SESSION['pesan_error'] ?? '';
+unset($_SESSION['pesan']);
+unset($_SESSION['pesan_error']);
 
-// 1. PROSES HAPUS VOUCHER
-if (isset($_GET['hapus'])) {
+// ==========================================
+// 1. PROSES HAPUS VOUCHER (VIA MODAL)
+// ==========================================
+if (isset($_POST['delete_voucher'])) {
+    $id_hapus = $_POST['voucher_id'];
     try {
         $stmt = $pdo->prepare("DELETE FROM vouchers WHERE id = ?");
-        $stmt->execute([$_GET['hapus']]);
-        $pesan = "Voucher berhasil dihapus!";
+        $stmt->execute([$id_hapus]);
+        $_SESSION['pesan'] = "Voucher berhasil dihapus permanen!";
     } catch (PDOException $e) {
-        $pesan_error = "Gagal menghapus: " . $e->getMessage();
+        // Tangkap error constraint database (kode 23000)
+        if ($e->getCode() == '23000') {
+            $_SESSION['pesan_error'] = "Voucher tidak dapat dihapus karena sudah pernah dipakai oleh pelanggan. Jika promo sudah berakhir, silakan Edit 'Masa Berlaku' menjadi tanggal kemarin agar kadaluarsa.";
+        } else {
+            $_SESSION['pesan_error'] = "Gagal menghapus: " . $e->getMessage();
+        }
     }
+    header("Location: kelola_voucher.php");
+    exit;
 }
 
+// ==========================================
 // 2. PROSES TAMBAH VOUCHER BARU
-if (isset($_POST['submit'])) {
+// ==========================================
+if (isset($_POST['add_voucher'])) {
     $code = strtoupper(trim($_POST['code'])); // Otomatis huruf besar
     $type = $_POST['type'];
     $value = $_POST['value'];
@@ -41,152 +56,207 @@ if (isset($_POST['submit'])) {
     try {
         $stmt = $pdo->prepare("INSERT INTO vouchers (code, type, value, min_purchase, max_uses, used_count, valid_until, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([$code, $type, $value, $min_purchase, $max_uses, $used_count, $valid_until, $waktu_sekarang, $waktu_sekarang]);
-        $pesan = "Voucher $code berhasil ditambahkan!";
+        $_SESSION['pesan'] = "Voucher '$code' berhasil ditambahkan!";
     } catch (PDOException $e) {
-        // Error biasanya terjadi kalau kode voucher duplikat (tergantung setingan unique di database)
-        $pesan_error = "Gagal menyimpan: " . $e->getMessage();
+        // Error biasanya terjadi kalau kode voucher duplikat (unique constraint)
+        if ($e->getCode() == 23000) {
+            $_SESSION['pesan_error'] = "Kode Voucher '$code' sudah pernah dibuat!";
+        } else {
+            $_SESSION['pesan_error'] = "Gagal menyimpan: " . $e->getMessage();
+        }
     }
+    header("Location: kelola_voucher.php");
+    exit;
 }
 
+// ==========================================
 // 3. AMBIL DATA SEMUA VOUCHER
+// ==========================================
 $stmt_list = $pdo->query("SELECT * FROM vouchers ORDER BY valid_until DESC");
 $vouchers = $stmt_list->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <title>Kelola Voucher | Admin SNEAKERS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 p-8">
+<?php 
+include 'layouts/header.php'; 
+include 'layouts/sidebar.php'; 
+include 'layouts/navbar.php'; 
+?>
 
-    <div class="max-w-7xl mx-auto">
-        <div class="flex justify-between items-center mb-8 border-b border-slate-200 pb-4">
-            <h1 class="text-3xl font-extrabold text-indigo-600">Manajemen Voucher Promo</h1>
-            <a href="index.php" class="text-slate-500 font-bold hover:text-indigo-600">&larr; Kembali ke Dashboard</a>
-        </div>
+<div class="row">
 
+    <div class="col-12 mb-4">
         <?php if ($pesan): ?>
-            <div class="bg-green-100 text-green-700 px-4 py-3 rounded-lg mb-6 font-bold shadow-sm"><?= $pesan ?></div>
+            <div class="alert alert-success border-0 bg-success-subtle text-success alert-dismissible fade show" role="alert">
+                <?= $pesan ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
         <?php endif; ?>
         <?php if ($pesan_error): ?>
-            <div class="bg-red-100 text-red-700 px-4 py-3 rounded-lg mb-6 font-bold shadow-sm"><?= $pesan_error ?></div>
-        <?php endif; ?>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            <div class="lg:col-span-1">
-                <div class="bg-white p-6 rounded-xl shadow border border-slate-100">
-                    <h2 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Buat Voucher Baru</h2>
-                    <form method="POST" action="">
-                        
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold text-slate-700 mb-1">Kode Voucher (Unik)</label>
-                            <input type="text" name="code" required placeholder="Cth: MERDEKA50" class="w-full px-3 py-2 border rounded focus:outline-indigo-500 uppercase">
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold text-slate-700 mb-1">Tipe Diskon</label>
-                            <select name="type" required class="w-full px-3 py-2 border rounded focus:outline-indigo-500 bg-white">
-                                <option value="fixed">Nominal Tetap (Rp)</option>
-                                <option value="percent">Persentase (%)</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold text-slate-700 mb-1">Besar Potongan</label>
-                            <input type="number" name="value" required placeholder="Cth: 50000 atau 15" class="w-full px-3 py-2 border rounded focus:outline-indigo-500">
-                            <p class="text-xs text-slate-500 mt-1">Jika tipe %, cukup isi 15 untuk 15%.</p>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold text-slate-700 mb-1">Minimal Belanja (Opsional)</label>
-                            <input type="number" name="min_purchase" placeholder="Kosongkan jika tidak ada" class="w-full px-3 py-2 border rounded focus:outline-indigo-500">
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold text-slate-700 mb-1">Batas Kuota Pemakaian (Opsional)</label>
-                            <input type="number" name="max_uses" placeholder="Kosongkan jika unlimited" class="w-full px-3 py-2 border rounded focus:outline-indigo-500">
-                        </div>
-
-                        <div class="mb-6">
-                            <label class="block text-sm font-bold text-slate-700 mb-1">Berlaku Sampai</label>
-                            <input type="datetime-local" name="valid_until" required class="w-full px-3 py-2 border rounded focus:outline-indigo-500">
-                        </div>
-
-                        <button type="submit" name="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition">
-                            Simpan Voucher
-                        </button>
-                    </form>
-                </div>
+            <div class="alert alert-danger border-0 bg-danger-subtle text-danger alert-dismissible fade show" role="alert">
+                <?= $pesan_error ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
+        <?php endif; ?>
+    </div>
 
-            <div class="lg:col-span-2">
-                <div class="bg-white rounded-xl shadow border border-slate-100 overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-slate-100 text-slate-600 text-sm uppercase tracking-wider">
-                                    <th class="p-4 font-bold">Kode</th>
-                                    <th class="p-4 font-bold">Potongan</th>
-                                    <th class="p-4 font-bold">Pemakaian</th>
-                                    <th class="p-4 font-bold">Masa Berlaku</th>
-                                    <th class="p-4 font-bold text-center">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 text-sm">
-                                <?php if (count($vouchers) > 0): ?>
-                                    <?php foreach ($vouchers as $v): ?>
-                                        <tr class="hover:bg-slate-50 transition">
-                                            <td class="p-4">
-                                                <span class="bg-indigo-100 text-indigo-700 font-black px-2 py-1 rounded border border-indigo-200">
-                                                    <?= htmlspecialchars($v['code']) ?>
-                                                </span>
-                                            </td>
-                                            <td class="p-4 font-bold text-slate-700">
+    <div class="col-lg-4">
+        <div class="card w-100 shadow-sm border-0">
+            <div class="card-body">
+                <h4 class="card-title fw-bold mb-4">Buat Voucher Baru</h4>
+                
+                <form method="POST" action="">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Kode Voucher (Unik)</label>
+                        <input type="text" name="code" required placeholder="Cth: MERDEKA50" class="form-control text-uppercase">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tipe Diskon</label>
+                        <select name="type" required class="form-select">
+                            <option value="fixed">Nominal Tetap (Rp)</option>
+                            <option value="percent">Persentase (%)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Besar Potongan</label>
+                        <input type="number" name="value" required placeholder="Cth: 50000 atau 15" class="form-control">
+                        <div class="form-text text-muted">Jika tipe %, cukup isi 15 untuk 15%.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Minimal Belanja (Opsional)</label>
+                        <input type="number" name="min_purchase" placeholder="Kosongkan jika tidak ada" class="form-control">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Batas Kuota (Opsional)</label>
+                        <input type="number" name="max_uses" placeholder="Kosongkan jika unlimited" class="form-control">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Berlaku Sampai</label>
+                        <input type="datetime-local" name="valid_until" required class="form-control">
+                    </div>
+
+                    <button type="submit" name="add_voucher" class="btn btn-primary w-100 fw-bold d-flex align-items-center justify-content-center gap-2">
+                        <i class="ti ti-plus fs-5"></i> Simpan Voucher
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card w-100 shadow-sm border-0">
+            <div class="card-body">
+                <h4 class="card-title fw-bold mb-4">Daftar Voucher Promo</h4>
+                
+                <div class="table-responsive">
+                    <table class="table mb-0 text-nowrap varient-table align-middle table-hover">
+                        <thead class="text-dark fs-4 bg-light">
+                            <tr>
+                                <th scope="col" class="px-3 border-bottom-0"><h6 class="fw-semibold mb-0">Kode</h6></th>
+                                <th scope="col" class="px-0 border-bottom-0"><h6 class="fw-semibold mb-0">Potongan</h6></th>
+                                <th scope="col" class="px-0 border-bottom-0 text-center"><h6 class="fw-semibold mb-0">Pemakaian</h6></th>
+                                <th scope="col" class="px-0 border-bottom-0"><h6 class="fw-semibold mb-0">Masa Berlaku</h6></th>
+                                <th scope="col" class="px-3 border-bottom-0 text-end"><h6 class="fw-semibold mb-0">Aksi</h6></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (count($vouchers) > 0): ?>
+                                <?php foreach ($vouchers as $v): ?>
+                                    <tr>
+                                        <td class="px-3 border-bottom-0">
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-3 px-2 py-1">
+                                                <i class="ti ti-ticket"></i> <?= htmlspecialchars($v['code']) ?>
+                                            </span>
+                                        </td>
+                                        
+                                        <td class="px-0 border-bottom-0">
+                                            <h6 class="fw-bold mb-1 text-dark">
                                                 <?php if ($v['type'] == 'percent'): ?>
                                                     <?= htmlspecialchars($v['value']) ?>%
                                                 <?php else: ?>
                                                     Rp <?= number_format($v['value'], 0, ',', '.') ?>
                                                 <?php endif; ?>
-                                                <br>
-                                                <?php if ($v['min_purchase']): ?>
-                                                    <span class="text-xs font-normal text-slate-500">Min. Rp <?= number_format($v['min_purchase'], 0, ',', '.') ?></span>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td class="p-4 text-slate-600">
-                                                <b><?= $v['used_count'] ?></b> / <?= $v['max_uses'] ? $v['max_uses'] : '&infin; (Unlimited)' ?>
-                                            </td>
-                                            <td class="p-4">
-                                                <?php 
-                                                    $is_expired = strtotime($v['valid_until']) < time();
-                                                ?>
-                                                <span class="<?= $is_expired ? 'text-red-500 font-bold' : 'text-slate-600' ?>">
-                                                    <?= date('d M Y, H:i', strtotime($v['valid_until'])) ?>
-                                                    <?= $is_expired ? '<br>(Kadaluarsa)' : '' ?>
-                                                </span>
-                                            </td>
-                                            <td class="p-4 text-center">
-                                                <a href="?hapus=<?= $v['id'] ?>" onclick="return confirm('Yakin ingin menghapus voucher ini?');" class="text-red-500 font-bold hover:text-red-700 bg-red-50 px-3 py-1 rounded">
-                                                    Hapus
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                <?php else: ?>
-                                    <tr>
-                                        <td colspan="5" class="p-8 text-center text-slate-500">Belum ada voucher promo.</td>
+                                            </h6>
+                                            <?php if ($v['min_purchase']): ?>
+                                                <span class="text-muted fs-2">Min. Rp <?= number_format($v['min_purchase'], 0, ',', '.') ?></span>
+                                            <?php endif; ?>
+                                        </td>
+                                        
+                                        <td class="px-0 border-bottom-0 text-center">
+                                            <span class="fw-bolder text-dark fs-4"><?= $v['used_count'] ?></span>
+                                            <span class="text-muted">/ <?= $v['max_uses'] ? $v['max_uses'] : '&infin;' ?></span>
+                                        </td>
+                                        
+                                        <td class="px-0 border-bottom-0">
+                                            <?php 
+                                                $is_expired = strtotime($v['valid_until']) < time();
+                                            ?>
+                                            <span class="d-block <?= $is_expired ? 'text-danger fw-bold' : 'text-dark fw-medium' ?>">
+                                                <?= date('d M Y, H:i', strtotime($v['valid_until'])) ?>
+                                            </span>
+                                            <?php if ($is_expired): ?>
+                                                <span class="badge bg-danger-subtle text-danger mt-1">Kadaluarsa</span>
+                                            <?php else: ?>
+                                                <span class="badge bg-success-subtle text-success mt-1">Aktif</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        
+                                        <td class="px-3 border-bottom-0 text-end">
+                                            <button type="button" class="btn btn-sm btn-danger shadow-sm" data-bs-toggle="modal" data-bs-target="#hapusVoucherModal<?= $v['id'] ?>" title="Hapus Voucher">
+                                                <i class="ti ti-trash fs-5"></i>
+                                            </button>
+                                        </td>
                                     </tr>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="5" class="px-0 text-center py-5">
+                                        <div class="text-muted mb-2"><i class="ti ti-ticket fs-8"></i></div>
+                                        <h6 class="fw-bolder">Belum ada voucher</h6>
+                                        <p class="text-muted mb-0">Silakan buat promo voucher baru di form sebelah kiri.</p>
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
-            </div>
 
+            </div>
         </div>
     </div>
 
-</body>
-</html>
+</div>
+
+<?php foreach ($vouchers as $v): ?>
+<div class="modal fade" id="hapusVoucherModal<?= $v['id'] ?>" tabindex="-1" aria-labelledby="hapusLabel<?= $v['id'] ?>" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-danger">
+      <div class="modal-header bg-danger text-white border-0">
+        <h5 class="modal-title fw-bold text-white" id="hapusLabel<?= $v['id'] ?>">Konfirmasi Hapus</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="" class="modal-content border-0">
+          <div class="modal-body text-center py-4">
+              <i class="ti ti-alert-triangle text-danger mb-3" style="font-size: 4rem;"></i>
+              <h5 class="fw-bold mb-2">Hapus Voucher "<?= htmlspecialchars($v['code']) ?>"?</h5>
+              <p class="text-muted mb-0">Pelanggan tidak akan bisa menggunakan kode ini lagi setelah dihapus.</p>
+              
+              <input type="hidden" name="voucher_id" value="<?= $v['id'] ?>">
+          </div>
+          <div class="modal-footer justify-content-center bg-light border-top-0">
+              <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Batal</button>
+              <button type="submit" name="delete_voucher" class="btn btn-danger px-4 fw-bold">Ya, Hapus!</button>
+          </div>
+      </form>
+    </div>
+  </div>
+</div>
+<?php endforeach; ?>
+
+<?php 
+include 'layouts/footer.php'; 
+?>
