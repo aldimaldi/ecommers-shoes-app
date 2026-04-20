@@ -31,11 +31,20 @@ $jumlah_keranjang = array_sum($keranjang_cookie);
                     
                     <a href="pesanan_saya.php" class="relative text-slate-600 hover:text-indigo-600 font-bold text-sm flex items-center transition pr-2">
                         📦 Pesanan Saya
+                        <?php 
+                        $jumlah_pesanan_aktif = 0;
+                        if (isset($_SESSION['customer_id'])) {
+                            $stmt_pesanan = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE user_id = ? AND status != 'COMPLETED'");
+                            $stmt_pesanan->execute([$_SESSION['customer_id']]);
+                            $jumlah_pesanan_aktif = $stmt_pesanan->fetchColumn();
+                        }
+                        ?>
                         <?php if($jumlah_pesanan_aktif > 0): ?>
                             <span class="absolute -top-3 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
                                 <?= $jumlah_pesanan_aktif ?>
                             </span>
                         <?php endif; ?>
+
                     </a>
 
                     <a href="keranjang.php" class="relative text-slate-600 hover:text-indigo-600 transition ml-2">
@@ -96,7 +105,30 @@ $jumlah_keranjang = array_sum($keranjang_cookie);
                     </div>
                 </a>
             <?php endforeach; ?>
-        </div>
-    </div>
+
+</div>
+
+<!-- SHOES GRID FOR CUSTOMERS -->
+<div class="mt-20 pt-12 border-t border-slate-200">
+<h3 class="text-3xl font-bold text-slate-900 mb-12 text-center">🔥 Featured Sneakers</h3>
+<?php 
+$stmt_shoes = $pdo->query("SELECT * FROM products ORDER BY id DESC LIMIT 12");
+$shoes = $stmt_shoes->fetchAll(PDO::FETCH_ASSOC);
+?>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+<?php foreach($shoes as $shoe): ?>
+<div class="bg-white rounded-2xl shadow-sm hover:shadow-xl border p-6 group transition">
+<img src="uploads/<?= htmlspecialchars($shoe['image']) ?>" alt="" class="w-full aspect-square object-cover rounded-xl mb-4 group-hover:scale-105 transition">
+<h4 class="font-bold text-lg mb-2 truncate"><?= htmlspecialchars($shoe['name']) ?></h4>
+<p class="text-xl font-black text-indigo-600 mb-4">Rp <?= number_format($shoe['price'], 0, ',', '.') ?></p>
+<a href="detail.php?produk=<?= htmlspecialchars($shoe['slug']) ?>" class="w-full bg-indigo-600 text-white py-2 rounded-xl font-bold text-center hover:bg-indigo-700">Beli Sekarang</a>
+</div>
+<?php endforeach; ?>
+</div>
+<a href="semua_produk.php" class="block text-center mt-12 text-indigo-600 font-bold hover:underline">Lihat Semua Sepatu →</a>
+</div>
+
+</div>
 </body>
 </html>
+

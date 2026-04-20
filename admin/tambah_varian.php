@@ -74,7 +74,18 @@ $list_varian = $stmt_list->fetchAll(PDO::FETCH_ASSOC);
                         <span class="block">Ukuran: <b>EU <?= htmlspecialchars($v['size']) ?></b></span>
                         <span class="block text-sm text-slate-500">Warna: <?= htmlspecialchars($v['color']) ?></span>
                     </div>
-                    <span>Stok: <b class="text-indigo-600"><?= htmlspecialchars($v['stock']) ?></b></span>
+                    <div class="flex items-center gap-3">
+                        <span>Stok: <b class="text-indigo-600"><?= htmlspecialchars($v['stock']) ?></b></span>
+                        <?php if ($v['stock'] == 0): ?>
+                            <a href="hapus_varian.php?id=<?= $v['id'] ?>&product_id=<?= $product_id ?>" 
+                               class="text-red-600 hover:text-red-800 font-bold text-sm bg-red-50 px-3 py-1 rounded border border-red-200 hover:bg-red-100 transition"
+                               onclick="return confirm('Hapus varian ini? Stok sudah 0.');">
+                                Hapus
+                            </a>
+                        <?php else: ?>
+                            <span class="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded font-bold">Stok Aktif</span>
+                        <?php endif; ?>
+                    </div>
                 </li>
             <?php endforeach; ?>
         </ul>

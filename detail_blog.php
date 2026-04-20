@@ -62,6 +62,27 @@ $jumlah_keranjang = array_sum($keranjang_cookie);
             <a href="blog.php" class="bg-slate-900 text-white px-8 py-3 rounded-full font-bold hover:bg-slate-800 transition">Lihat Artikel Lainnya</a>
         </div>
 
+        <!-- RECOMMENDED SHOES - Multiple variants/products -->
+        <div class="mt-20">
+            <h3 class="text-2xl font-bold text-slate-900 mb-8 text-center">💎 Recommended Sneakers</h3>
+            <?php 
+            $stmt_shoes = $pdo->query("SELECT * FROM products ORDER BY RAND() LIMIT 8");
+            $shoes = $stmt_shoes->fetchAll(PDO::FETCH_ASSOC);
+            ?>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <?php foreach ($shoes as $shoe): ?>
+                    <div class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-lg border border-slate-100 group transition">
+                        <div class="aspect-square bg-slate-100 rounded-xl overflow-hidden mb-3">
+                            <img src="uploads/<?= htmlspecialchars($shoe['image']) ?>" alt="<?= htmlspecialchars($shoe['name']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition">
+                        </div>
+                        <h4 class="font-bold text-slate-900 text-base mb-2 truncate"><?= htmlspecialchars($shoe['name']) ?></h4>
+                        <p class="text-indigo-600 font-black text-lg mb-3">Rp <?= number_format($shoe['price'], 0, ',', '.') ?></p>
+                        <a href="detail.php?produk=<?= htmlspecialchars($shoe['slug']) ?>" class="w-full block bg-indigo-600 text-white text-sm font-bold py-2 px-4 rounded-xl text-center hover:bg-indigo-700 transition">Lihat Detail</a>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
     </div>
 
 </body>

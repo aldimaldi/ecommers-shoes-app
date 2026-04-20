@@ -64,51 +64,47 @@ $produk_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </a>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-100 text-slate-600 text-sm uppercase tracking-wider">
-                            <th class="p-4 font-bold">Foto</th>
-                            <th class="p-4 font-bold">Nama Sepatu</th>
-                            <th class="p-4 font-bold">Kategori</th>
-                            <th class="p-4 font-bold">Harga</th>
-                            <th class="p-4 font-bold text-center">Aksi / Varian</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        <?php if (count($produk_list) > 0): ?>
-                            <?php foreach ($produk_list as $p): ?>
-                                <tr class="hover:bg-slate-50 transition">
-                                    <td class="p-4">
-                                        <img src="../uploads/<?= htmlspecialchars($p['image']) ?>" alt="Foto" class="w-16 h-16 object-cover rounded-lg border border-slate-200">
-                                    </td>
-                                    <td class="p-4 font-bold text-slate-800">
-                                        <?= htmlspecialchars($p['name']) ?>
-                                    </td>
-                                    <td class="p-4 text-slate-600">
-                                        <span class="bg-slate-100 px-3 py-1 rounded-full text-xs font-semibold">
-                                            <?= htmlspecialchars($p['category_name'] ?? '-') ?>
-                                        </span>
-                                    </td>
-                                    <td class="p-4 font-bold text-indigo-600">
-                                        Rp <?= number_format($p['price'], 0, ',', '.') ?>
-                                    </td>
-                                    <td class="p-4 text-center">
-                                        <a href="tambah_varian.php?product_id=<?= $p['id'] ?>" class="inline-block bg-indigo-50 text-indigo-700 border border-indigo-200 px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-600 hover:text-white transition">
-                                            + Kelola Varian
-                                        </a>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <tr>
-                                <td colspan="5" class="p-8 text-center text-slate-500">
-                                    Belum ada produk. Silakan tambah sepatu baru terlebih dahulu.
-                                </td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+            <div class="p-8">
+                <?php if (count($produk_list) > 0): ?>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <?php foreach ($produk_list as $p): ?>
+                            <div class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl border border-slate-100 transition-all duration-300 group">
+                                <div class="relative mb-4">
+                                    <img src="../uploads/<?= htmlspecialchars($p['image']) ?>" alt="Foto" class="w-full aspect-square object-cover rounded-xl border-2 border-slate-200 group-hover:border-indigo-300 transition">
+                                    <span class="absolute top-3 left-3 bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs font-bold">
+                                        <?= htmlspecialchars($p['category_name'] ?? 'No Cat') ?>
+                                    </span>
+                                </div>
+                                
+                                <h3 class="font-bold text-lg text-slate-900 mb-2 truncate leading-tight"><?= htmlspecialchars($p['name']) ?></h3>
+                                
+                                <p class="text-2xl font-black text-indigo-600 mb-4">Rp <?= number_format($p['price'], 0, ',', '.') ?></p>
+                                
+                                <div class="flex gap-2">
+                                    <a href="tambah_varian.php?product_id=<?= $p['id'] ?>" class="flex-1 bg-indigo-600 text-white text-sm font-bold py-2 px-4 rounded-xl text-center hover:bg-indigo-700 transition shadow-sm">
+                                        Kelola Varian
+                                    </a>
+                                    <a href="edit_product.php?id=<?= $p['id'] ?>" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold p-2 rounded-xl transition flex items-center justify-center shadow-sm w-12 h-12" title="Edit">
+                                        ✏️
+                                    </a>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <div class="p-16 text-center border-2 border-dashed border-slate-200 rounded-2xl">
+                        <div class="w-20 h-20 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4l-8-4m0 0v10l-8 4m0-4V7m16 0h-4m-4 0H4" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-600 mb-2">Belum ada produk</h3>
+                        <p class="text-slate-500 mb-6">Silakan tambah sepatu baru terlebih dahulu.</p>
+                        <a href="tambah_product.php" class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-indigo-700 transition shadow-lg">
+                            + Tambah Produk Pertama
+                        </a>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
 

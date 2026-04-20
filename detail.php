@@ -131,47 +131,43 @@ if (isset($_SESSION['customer_id'])) {
                         <h3 class="text-lg font-bold text-slate-800 mb-3">Pilih Ukuran & Warna</h3>
                         
                         <?php if(count($varian_sepatu) > 0): ?>
-                            <form action="tambah_keranjang.php" method="POST" class="flex flex-col gap-4">
-                                <input type="hidden" name="product_id" value="<?= $sepatu['id'] ?>">
-                                
-                                <div class="flex flex-wrap gap-3 mb-2">
-                                    <?php foreach ($varian_sepatu as $v): ?>
-                                        <label class="cursor-pointer">
-                                            <input type="radio" name="variant_id" value="<?= $v['id'] ?>" required class="peer sr-only">
-                                            <div class="px-4 py-2 border-2 border-slate-200 rounded-lg text-slate-600 font-bold peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 hover:border-indigo-300 transition">
-                                                EU <?= htmlspecialchars($v['size']) ?> - <?= htmlspecialchars($v['color']) ?>
-                                                <span class="block text-xs font-normal text-slate-400 mt-1">Sisa: <?= $v['stock'] ?> pasang</span>
-                                            </div>
-                                        </label>
-                                    <?php endforeach; ?>
-                                </div>
+                          <form action="tambah_keranjang.php" method="POST" class="flex flex-col gap-4">
+    <input type="hidden" name="product_id" value="<?= $sepatu['id'] ?>">
+    
+    <div class="flex flex-wrap gap-3 mb-2">
+        <?php foreach ($varian_sepatu as $v): ?>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="variant_id" value="<?= $v['id'] ?>" required class="peer sr-only">
+                            <div class="px-4 py-2 border-2 border-slate-200 rounded-lg text-slate-600 font-bold peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 hover:border-indigo-300 transition">
+                                EU <?= htmlspecialchars($v['size']) ?> - <?= htmlspecialchars($v['color']) ?>
+                                <span class="block text-xs font-normal text-slate-400 mt-1">Sisa: <?= $v['stock'] ?> pasang</span>
+                            </div>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
 
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 mb-2">Jumlah Pembelian</label>
-                                    <div class="flex items-center">
-                                        <input type="number" name="qty" value="1" min="1" required class="w-24 px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-indigo-600 text-center font-bold text-lg text-slate-800">
-                                    </div>
-                                </div>
-                                
-                                <div class="flex gap-4 mt-4">
-                                    <?php if (isset($_SESSION['customer_name'])): ?>
-                                        
-                                        <button type="submit" name="action" value="cart" class="flex-1 bg-white text-indigo-600 border-2 border-indigo-600 font-bold py-4 px-4 rounded-xl hover:bg-indigo-50 transition shadow-sm active:scale-95 flex justify-center items-center gap-2">
-                                            🛒 Masukkan Keranjang
-                                        </button>
-
-                                        <button type="submit" name="action" value="checkout" class="flex-1 bg-indigo-600 text-white font-bold py-4 px-4 rounded-xl hover:bg-indigo-700 transition shadow-lg hover:shadow-indigo-600/20 active:scale-95">
-                                            Beli Langsung
-                                        </button>
-
-                                    <?php else: ?>
-                                        <a href="login.php" class="w-full text-center bg-slate-900 text-white font-bold py-4 px-8 rounded-xl hover:bg-slate-800 transition shadow-lg active:scale-95">
-                                            Login untuk Membeli
-                                        </a>
-                                    <?php endif; ?>
-                                </div>
-                            </form>
-
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Jumlah Pembelian</label>
+                    <div class="flex items-center">
+                        <input type="number" name="qty" value="1" min="1" required class="w-24 px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-indigo-600 text-center font-bold text-lg text-slate-800">
+                    </div>
+                </div>
+                
+                <div class="flex gap-4 mt-4">
+                    <?php if (isset($_SESSION['customer_name'])): ?>
+                        <button type="submit" name="action" value="cart" class="flex-1 bg-white text-indigo-600 border-2 border-indigo-600 font-bold py-4 px-4 rounded-xl hover:bg-indigo-50 transition shadow-sm active:scale-95 flex justify-center items-center gap-2">
+                            🛒 Masukkan Keranjang
+                        </button>
+                    <button type="submit" name="action" value="buy_direct" class="flex-1 bg-indigo-600 text-white font-bold py-4 px-4 rounded-xl hover:bg-indigo-700 transition shadow-lg hover:shadow-indigo-600/20 active:scale-95">
+                            Beli Langsung
+                        </button>
+                    <?php else: ?>
+                        <a href="login.php" class="w-full text-center bg-slate-900 text-white font-bold py-4 px-8 rounded-xl hover:bg-slate-800 transition shadow-lg active:scale-95">
+                            Login untuk Membeli
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </form>
                         <?php else: ?>
                             <p class="text-red-500 font-bold bg-red-50 p-4 rounded-lg border border-red-100">
                                 Maaf, stok semua varian sedang kosong.
