@@ -3,7 +3,7 @@ session_start();
 require 'koneksi.php'; 
 
 // Mengambil produk dari database
-$stmt = $pdo->query("SELECT * FROM products ORDER BY id DESC LIMIT 8");
+$stmt = $pdo->query("SELECT * FROM products WHERE products.deleted_at IS NULL ORDER BY id DESC LIMIT 8 ");
 $sepatu = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $keranjang_cookie = isset($_COOKIE['keranjang']) ? json_decode($_COOKIE['keranjang'], true) : [];

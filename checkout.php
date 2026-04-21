@@ -47,7 +47,7 @@ if (isset($_POST['cek_voucher'])) {
     $kode = trim($_POST['voucher_code']);
     $waktu_sekarang = date('Y-m-d H:i:s');
 
-    $stmt_voc = $pdo->prepare("SELECT * FROM vouchers WHERE code = ? AND valid_until >= ? AND (max_uses IS NULL OR used_count < max_uses) AND (min_purchase IS NULL OR min_purchase <= ?)");
+    $stmt_voc = $pdo->prepare("SELECT * FROM vouchers WHERE code = ? AND valid_until >= ? AND (max_uses IS NULL OR used_count < max_uses) AND (min_purchase IS NULL OR min_purchase <= ?) AND deleted_at IS NULL");
     $stmt_voc->execute([$kode, $waktu_sekarang, $total_price]);
     $voucher = $stmt_voc->fetch(PDO::FETCH_ASSOC);
 
