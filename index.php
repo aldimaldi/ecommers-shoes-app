@@ -141,7 +141,7 @@ if (isset($_SESSION['customer_id'])) {
 
 <div id="latest" class="max-w-7xl mx-auto px-6 py-16">
     <div class="flex justify-between items-end mb-6">
-        <h2 class="text-4xl font-extrabold text-slate-900">Sepatu Trending di Blok M</h2>
+        <h2 class="text-4xl font-extrabold text-slate-900">Koleksi Sepatu Terbaru</h2>
         <a href="semua_produk.php" class="text-[#9b51e0] font-bold text-sm flex items-center hover:underline">View All <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></a>
     </div>
 
