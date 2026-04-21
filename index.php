@@ -213,6 +213,43 @@ if (isset($_SESSION['customer_id'])) {
         </div>
     <?php endif; ?>
 </div>
+<!-- <footer class="bg-slate-900 text-white py-10 mt-16">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            <div>
+                <div class="flex items-center space-x-2 mb-4">
+                    <div class="bg-purple-600 text-white w-8 h-8 flex items-center justify-center rounded-lg font-bold text-sm">S</div>
+                    <span class="font-extrabold text-lg tracking-wider text-white">SNEAKERS.</span>
+                </div>
+                <p class="text-slate-400 text-sm leading-relaxed">Toko sepatu terpercaya dengan koleksi sneakers terlengkap dan terkini.</p>
+            </div>
+            <div>
+                <h4 class="font-bold mb-3 text-slate-200">Navigasi</h4>
+                <ul class="space-y-2 text-sm text-slate-400">
+                    <li><a href="index.php" class="hover:text-white transition">Beranda</a></li>
+                    <li><a href="semua_produk.php" class="hover:text-white transition">Semua Produk</a></li>
+                    <li><a href="blog.php" class="hover:text-white transition">Blog</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold mb-3 text-slate-200">Akun</h4>
+                <ul class="space-y-2 text-sm text-slate-400">
+                    <?php if(isset($_SESSION['customer_id'])): ?>
+                        <li><a href="pesanan_saya.php" class="hover:text-white transition">Pesanan Saya</a></li>
+                        <li><a href="keranjang.php" class="hover:text-white transition">Keranjang</a></li>
+                        <li><a href="logout.php" class="hover:text-white transition">Logout</a></li>
+                    <?php else: ?>
+                        <li><a href="login.php" class="hover:text-white transition">Masuk</a></li>
+                        <li><a href="register.php" class="hover:text-white transition">Daftar</a></li>
+                    <?php endif; ?>
+                </ul>
+            </div>
+        </div>
+        <div class="border-t border-slate-800 pt-6 text-center text-slate-500 text-sm">
+            © <?= date('Y') ?> SNEAKERS. — All rights reserved.
+        </div>
+    </div>
+</footer> -->
 
 <script>
 // --- LOGIC SLIDER ---

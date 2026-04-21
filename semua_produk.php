@@ -2,7 +2,7 @@
 session_start();
 require 'koneksi.php';
 
-$stmt = $pdo->query("SELECT * FROM products ORDER BY id DESC");
+$stmt = $pdo->query("SELECT * FROM products WHERE deleted_at IS NULL ORDER BY id DESC");
 $sepatu = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>

@@ -102,7 +102,7 @@ $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </a>
         </div>
         <?php
-        $stmt_shoes = $pdo->query("SELECT * FROM products ORDER BY id DESC LIMIT 8");
+        $stmt_shoes = $pdo->query("SELECT * FROM products WHERE deleted_at IS NULL ORDER BY id DESC LIMIT 8");
         $shoes = $stmt_shoes->fetchAll(PDO::FETCH_ASSOC);
         ?>
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
