@@ -19,18 +19,18 @@ unset($_SESSION['pesan_error']);
 // ==========================================
 if (isset($_POST['delete_voucher'])) {
     $id_hapus = $_POST['voucher_id'];
+    
     try {
-        $stmt = $pdo->prepare("DELETE FROM vouchers WHERE id = ?");
+        // Mengubah status voucher menjadi terhapus
+        $stmt = $pdo->prepare("UPDATE vouchers SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?");
         $stmt->execute([$id_hapus]);
-        $_SESSION['pesan'] = "Voucher berhasil dihapus permanen!";
+        
+        $_SESSION['pesan'] = "Voucher berhasil dihapus!";
     } catch (PDOException $e) {
-        // Tangkap error constraint database (kode 23000)
-        if ($e->getCode() == '23000') {
-            $_SESSION['pesan_error'] = "Voucher tidak dapat dihapus karena sudah pernah dipakai oleh pelanggan. Jika promo sudah berakhir, silakan Edit 'Masa Berlaku' menjadi tanggal kemarin agar kadaluarsa.";
-        } else {
-            $_SESSION['pesan_error'] = "Gagal menghapus: " . $e->getMessage();
-        }
+        // Tangkapan error disederhanakan karena UPDATE tidak akan memicu error relasi (Constraint 23000)
+        $_SESSION['pesan_error'] = "Gagal menghapus voucher: " . $e->getMessage();
     }
+    
     header("Location: kelola_voucher.php");
     exit;
 }
@@ -72,7 +72,7 @@ if (isset($_POST['add_voucher'])) {
 // ==========================================
 // 3. AMBIL DATA SEMUA VOUCHER
 // ==========================================
-$stmt_list = $pdo->query("SELECT * FROM vouchers ORDER BY valid_until DESC");
+$stmt_list = $pdo->query("SELECT * FROM vouchers WHERE deleted_at IS NULL ORDER BY valid_until DESC");
 $vouchers = $stmt_list->fetchAll(PDO::FETCH_ASSOC);
 ?>
 

@@ -99,17 +99,16 @@ if (isset($_POST['edit_product'])) {
 // ==========================================
 if (isset($_POST['delete_product'])) {
     $id_hapus = $_POST['product_id'];
-    $img_hapus = $_POST['product_image'];
     
     try {
-        if ($img_hapus && file_exists("../uploads/" . $img_hapus)) {
-            unlink("../uploads/" . $img_hapus);
-        }
-        $stmt_del = $pdo->prepare("DELETE FROM products WHERE id = ?");
+        // Kita menggunakan UPDATE, bukan DELETE. 
+        // Mengisi kolom deleted_at dengan waktu saat ini (CURRENT_TIMESTAMP)
+        $stmt_del = $pdo->prepare("UPDATE products SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?");
         $stmt_del->execute([$id_hapus]);
-        $_SESSION['pesan'] = "Produk berhasil dihapus permanen.";
+        
+        $_SESSION['pesan'] = "Produk berhasil dihapus.";
     } catch (PDOException $e) {
-        $_SESSION['pesan_error'] = "Gagal menghapus produk. Pastikan tidak ada varian stok atau pesanan aktif terkait produk ini.";
+        $_SESSION['pesan_error'] = "Gagal menghapus produk: " . $e->getMessage();
     }
     
     header("Location: product.php");
@@ -126,6 +125,7 @@ $stmt = $pdo->query("
     SELECT products.*, categories.name AS category_name 
     FROM products 
     LEFT JOIN categories ON products.category_id = categories.id 
+    WHERE products.deleted_at IS NULL
     ORDER BY products.id DESC
 ");
 $produk_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
