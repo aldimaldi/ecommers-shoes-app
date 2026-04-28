@@ -42,40 +42,70 @@ if (isset($_POST['submit'])) {
 }
 ?>
 
-<!DOCTYPE html>
-<html lang="id">
+<!doctype html>
+<html lang="en">
+
 <head>
-    <title>Login | SNEAKERS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login page</title>
+  <!-- <link rel="shortcut icon" type="image/png" href="./assets/images/logos/favicon.png" /> -->
+  <link rel="stylesheet" href="./assets/css/styles.min.css" />
 </head>
-<body class="bg-slate-100 flex items-center justify-center h-screen">
-    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-        <h2 class="text-2xl font-extrabold text-center text-slate-800 mb-6">Selamat Datang</h2>
-        
-        <?php if ($pesan_sukses): ?>
-            <div class="bg-green-100 text-green-700 px-4 py-3 rounded mb-4 text-sm"><?= $pesan_sukses ?></div>
-        <?php endif; ?>
 
-        <?php if ($error): ?>
-            <div class="bg-red-100 text-red-700 px-4 py-3 rounded mb-4 text-sm"><?= $error ?></div>
-        <?php endif; ?>
+<body>
+  <!--  Body Wrapper -->
+  <div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
+    data-sidebar-position="fixed" data-header-position="fixed">
+    <div
+      class="position-relative overflow-hidden text-bg-light min-vh-100 d-flex align-items-center justify-content-center">
+      <div class="d-flex align-items-center justify-content-center w-100">
+        <div class="row justify-content-center w-100">
+          <div class="col-md-8 col-lg-6 col-xxl-3">
+            <div class="card mb-0">
+              <div class="card-body">
+                <div class="d-flex justify-content-center w-100 mb-2">
+                    <a href="index.php" class="text-nowrap logo-img d-flex align-items-center gap-2 text-decoration-none">
+                        <div class="bg-primary text-white d-flex align-items-center justify-content-center rounded-2 fw-bolder" style="width: 32px; height: 32px; font-size: 18px;">
+                            S
+                        </div>
+                        <span class="fw-bolder fs-5 text-primary" style="letter-spacing: 1.5px;">SNEAKERS.</span>
+                    </a>
+                </div>
+                <p class="text-center">Login ke Akun Mu</p>
+                <?php if ($pesan_sukses): ?>
+                    <div class="alert alert-success" role="alert"><?= $pesan_sukses ?></div>
+                <?php endif; ?>
 
-        <form method="POST" action="">
-            <div class="mb-4">
-                <label class="block text-slate-700 text-sm font-bold mb-2">Email</label>
-                <input type="email" name="email" required class="w-full px-3 py-2 border border-slate-300 rounded focus:outline-none focus:border-indigo-500">
+                <?php if ($error): ?>
+                    <div class="alert alert-danger" role="alert"><?= $error ?></div>
+                <?php endif; ?>
+                <form method="POST" action="">
+                  <div class="mb-3">
+                    <label for="exampleInputEmail1" class="form-label">Username</label>
+                    <input type="email" name="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" required>
+                  </div>
+                  <div class="mb-4">
+                    <label for="exampleInputPassword1" class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control" id="exampleInputPassword1" required>
+                  </div>
+                  <button type="submit" name="submit" class="btn btn-primary w-100 py-8 fs-4 mb-4 rounded-2">Sign In</button>
+                  <div class="d-flex align-items-center justify-content-center">
+                    <p class="fs-4 mb-0 fw-bold">Tidak Memiliki akun ?</p>
+                    <a class="text-primary fw-bold ms-2" href="register.php">Register</a>
+                  </div>
+                </form>
+              </div>
             </div>
-            <div class="mb-6">
-                <label class="block text-slate-700 text-sm font-bold mb-2">Password</label>
-                <input type="password" name="password" required class="w-full px-3 py-2 border border-slate-300 rounded focus:outline-none focus:border-indigo-500">
-            </div>
-            <button type="submit" name="submit" class="w-full bg-slate-900 text-white font-bold py-2 px-4 rounded hover:bg-slate-800 transition">
-                Masuk
-            </button>
-        </form>
-        <div class="text-center mt-4">
-            <a href="register.php" class="text-sm text-slate-500 hover:text-indigo-600">Belum punya akun? Daftar</a>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
+  <script src="./assets/libs/jquery/dist/jquery.min.js"></script>
+  <script src="./assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- solar icons -->
+  <script src="https://cdn.jsdelivr.net/npm/iconify-icon@1.0.8/dist/iconify-icon.min.js"></script>
 </body>
+
 </html>
