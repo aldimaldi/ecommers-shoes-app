@@ -2,9 +2,40 @@
 session_start();
 require 'koneksi.php'; 
 
-// Mengambil produk dari database
-$stmt = $pdo->query("SELECT * FROM products WHERE products.deleted_at IS NULL ORDER BY id DESC LIMIT 8 ");
-$sepatu = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// ====================================================================
+// 1. AMBIL DATA KATEGORI UNTUK TOMBOL FILTER (Ini yang membuat error jika terlewat)
+// ====================================================================
+$kategori_aktif = isset($_GET['kategori']) ? $_GET['kategori'] : '';
+
+$stmt_kategori = $pdo->query("SELECT * FROM categories ORDER BY name ASC");
+$kategori_list = $stmt_kategori->fetchAll(PDO::FETCH_ASSOC);
+
+
+// ====================================================================
+// 2. AMBIL DATA PRODUK (Kode yang baru kita gabungkan sebelumnya)
+// ====================================================================
+$sql_produk = "
+    SELECT products.*, categories.name AS category_name 
+    FROM products 
+    LEFT JOIN categories ON products.category_id = categories.id 
+    WHERE products.deleted_at IS NULL
+";
+$params = [];
+
+if (!empty($kategori_aktif)) {
+    $sql_produk .= " AND products.category_id = ?";
+    $params[] = $kategori_aktif;
+}
+
+$sql_produk .= " ORDER BY products.id DESC LIMIT 8";
+
+$stmt_produk = $pdo->prepare($sql_produk);
+$stmt_produk->execute($params);
+$sepatu = $stmt_produk->fetchAll(PDO::FETCH_ASSOC);
+
+// ====================================================================
+// KODE UNTUK KERANJANG DAN PESANAN AKTIF (Tetap menggunakan kodemu)
+// ====================================================================
 
 $keranjang_cookie = isset($_COOKIE['keranjang']) ? json_decode($_COOKIE['keranjang'], true) : [];
 $jumlah_keranjang = array_sum($keranjang_cookie);
@@ -146,11 +177,17 @@ if (isset($_SESSION['customer_id'])) {
     </div>
 
     <div class="flex space-x-3 mb-10 overflow-x-auto no-scrollbar pb-2">
-        <button class="bg-[#9b51e0] text-white px-6 py-2 rounded-full text-sm font-bold shadow-md">All</button>
-        <button class="border border-gray-200 text-gray-600 hover:border-[#9b51e0] hover:text-[#9b51e0] px-6 py-2 rounded-full text-sm font-bold transition">Running</button>
-        <button class="border border-gray-200 text-gray-600 hover:border-[#9b51e0] hover:text-[#9b51e0] px-6 py-2 rounded-full text-sm font-bold transition">Basketball</button>
-        <button class="border border-gray-200 text-gray-600 hover:border-[#9b51e0] hover:text-[#9b51e0] px-6 py-2 rounded-full text-sm font-bold transition">Lifestyle</button>
-        <button class="border border-gray-200 text-gray-600 hover:border-[#9b51e0] hover:text-[#9b51e0] px-6 py-2 rounded-full text-sm font-bold transition">Limited</button>
+        <a href="index.php" 
+        class="<?= empty($kategori_aktif) ? 'bg-[#9b51e0] text-white px-6 py-2 rounded-full text-sm font-bold shadow-md' : 'border border-gray-200 text-gray-600 hover:border-[#9b51e0] hover:text-[#9b51e0] px-6 py-2 rounded-full text-sm font-bold transition' ?>">
+            All
+        </a>
+
+        <?php foreach ($kategori_list as $kat): ?>
+            <a href="index.php?kategori=<?= $kat['id'] ?>" 
+            class="<?= ($kategori_aktif == $kat['id']) ? 'bg-[#9b51e0] text-white px-6 py-2 rounded-full text-sm font-bold shadow-md' : 'border border-gray-200 text-gray-600 hover:border-[#9b51e0] hover:text-[#9b51e0] px-6 py-2 rounded-full text-sm font-bold transition' ?>">
+                <?= htmlspecialchars($kat['name']) ?>
+            </a>
+        <?php endforeach; ?>
     </div>
    
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
