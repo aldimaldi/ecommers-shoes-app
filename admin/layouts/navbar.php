@@ -1,4 +1,9 @@
 <?php
+if (!isset($_SESSION['admin_id'])) {
+    header("Location: ../login.php");
+    exit;
+}
+
 // Ambil 5 pesanan terbaru yang statusnya PENDING
 
 $stmt_notif = $pdo->query("
@@ -79,9 +84,14 @@ $jumlah_notif = count($notif_pesanan);
               <li class="nav-item dropdown">
                 <a class="nav-link " href="javascript:void(0)" id="drop2" data-bs-toggle="dropdown"
                   aria-expanded="false">
-                  <img src="././assets/images/profile/user-1.jpg" alt="" width="35" height="35" class="rounded-circle">
+                  <div class="bg-primary text-white d-flex align-items-center justify-content-center rounded-circle shadow-sm border fw-bolder" style="width: 35px; height: 35px; font-size: 16px;">
+                      <?= strtoupper(substr($_SESSION['admin_name'] ?? 'A', 0, 1)) ?>
+                  </div>
                 </a>
                 <div class="dropdown-menu dropdown-menu-end dropdown-menu-animate-up" aria-labelledby="drop2">
+                  <div class="message-body">
+                    <a href="./users.php" class="btn btn-outline-primary mx-3 mt-2 d-block">Kelola Users</a>
+                  </div>
                   <div class="message-body">
                     <a href="./logout.php" class="btn btn-outline-danger mx-3 mt-2 d-block">Logout</a>
                   </div>
