@@ -23,7 +23,7 @@ if (isset($_POST['add_product'])) {
     $name = trim($_POST['name']);
     $category_id = $_POST['category_id'];
     $description = trim($_POST['description']);
-    $price = $_POST['price'];
+    $price = preg_replace('/[^0-9]/', '', $_POST['price']);
     $base_slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name)));
     $slug = $base_slug . '-' . substr(uniqid(), -5);
     $waktu_sekarang = date('Y-m-d H:i:s');
@@ -63,7 +63,7 @@ if (isset($_POST['edit_product'])) {
     $name = trim($_POST['name']);
     $category_id = $_POST['category_id'];
     $description = trim($_POST['description']);
-    $price = $_POST['price'];
+    $price = preg_replace('/[^0-9]/', '', $_POST['price']);
     $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name)));
     $waktu_sekarang = date('Y-m-d H:i:s');
     
@@ -259,8 +259,8 @@ include 'layouts/navbar.php';
               </select>
           </div>
           <div class="mb-3">
-              <label class="form-label fw-semibold">Harga (Rp)</label>
-              <input type="number" name="price" class="form-control" required placeholder="Contoh: 1500000">
+            <label class="form-label fw-semibold">Harga (Rp)</label>
+            <input type="text" name="price" class="form-control format-rupiah" required placeholder="Contoh: 1.500.000">
           </div>
           <div class="mb-3">
               <label class="form-label fw-semibold">Deskripsi</label>
@@ -308,8 +308,8 @@ include 'layouts/navbar.php';
               </select>
           </div>
           <div class="mb-3">
-              <label class="form-label fw-semibold">Harga (Rp)</label>
-              <input type="number" name="price" class="form-control" value="<?= $p['price'] ?>" required>
+            <label class="form-label fw-semibold">Harga (Rp)</label>
+            <input type="text" name="price" class="form-control format-rupiah" value="<?= number_format($p['price'], 0, '', '.') ?>" required>
           </div>
           <div class="mb-3">
               <label class="form-label fw-semibold">Deskripsi</label>
@@ -363,3 +363,19 @@ include 'layouts/navbar.php';
 <?php 
 include 'layouts/footer.php'; 
 ?>
+
+<script>
+    // Fungsi untuk memformat angka dengan titik ribuan
+    document.querySelectorAll('.format-rupiah').forEach(function(input) {
+        input.addEventListener('keyup', function(e) {
+            // Hapus karakter selain angka
+            let value = this.value.replace(/[^0-9]/g, ''); 
+            
+            // Tambahkan titik setiap 3 digit dari belakang
+            let formatted = value.replace(/\B(?=(\d{3})+(?!\d))/g, "."); 
+            
+            // Kembalikan nilai ke input form
+            this.value = formatted;
+        });
+    });
+</script>
